@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -8,17 +10,6 @@ namespace dots.and.boxes {
   
   public partial class MainForm : Form {
 
-    [Flags]
-    internal enum CellState {
-      Empty = 0,
-      Top = 1,
-      Left = 2,
-      Bottom = 4,
-      Right = 8,
-      All = Top | Left | Bottom | Right,
-      OwnedByPlayer1 = 16, //AllFilled & !OwnedByPlayer1 = OwnedByPlayer2
-    }
-    
     #region Paint setup
 
     private const int EmptyBordersSize = 20;
@@ -29,6 +20,7 @@ namespace dots.and.boxes {
     private readonly Pen clearBorderPen;
     private readonly Pen previewBorderPen;
     private readonly Pen filledBorderPen;
+    private readonly Pen lastMoveBorderPen;
     private readonly SolidBrush pointBrush;
     private readonly SolidBrush player1CellBrush;
     private readonly SolidBrush player2CellBrush;
@@ -39,8 +31,11 @@ namespace dots.and.boxes {
 
     private const int Columns = 10;
     private const int Rows = 10;
+    private readonly Timer moveTimer;
+    private readonly Random random = new Random();
+    private MoveInfo lastMove;
     
-    private byte[,] boardData;
+    private CellState[,] boardData;
     
     private bool player1Move;
     internal bool Player1Move {
@@ -81,6 +76,7 @@ namespace dots.and.boxes {
         RedrawBoard();
       }
     }
+    
     private int mouseColumn;
     internal int MouseColumn {
       get => mouseColumn;
@@ -118,31 +114,23 @@ namespace dots.and.boxes {
       
       clearBorderPen = new Pen(Color.LightGray, 1);
       filledBorderPen = new Pen(Color.MediumBlue, CellBorderWidth);
+      lastMoveBorderPen = new Pen(Color.DodgerBlue, CellBorderWidth);
       previewBorderPen = new Pen(Color.Goldenrod, CellBorderWidth);
 
       player1CellBrush = new SolidBrush(lblPlayer1Score.ForeColor);
       player2CellBrush = new SolidBrush(lblPlayer2Score.ForeColor);
+
+      moveTimer = new Timer();
+      moveTimer.Interval = 300;
+      moveTimer.Enabled = false;
+      moveTimer.Tick += MoveTimerOnTick;
 
       gameBoard.Paint += GameBoardOnPaint;
       gameBoard.SizeChanged += (sender, args) => RedrawBoard(); //redraw on panel resize
       gameBoard.MouseMove += GameBoardOnMouseMove;
       gameBoard.MouseClick += GameBoardOnMouseClick;
       
-      StartNewGame();
-    }
-
-    private void StartNewGame() {
-
-      boardData = new byte[Columns, Rows];
-      for (var i = 0; i < Columns; i++)
-      for (var j = 0; j < Rows; j++)
-        boardData[i, j] = (byte) (CellState.Empty);
-
-      Player1Move = true;
-      Player1Score = 0;
-      Player2Score = 0;
-      
-      RedrawBoard();
+      btnRestart_Click(this, EventArgs.Empty);
     }
 
     #region paint
@@ -158,24 +146,24 @@ namespace dots.and.boxes {
       // g.Clear(Color.FromArgb(253, 250, 231));
       var cellSize = new Size((gameBoard.Width - EmptyBordersSize * 2) / Columns, (gameBoard.Height - EmptyBordersSize * 2) / Rows);
 
-      for (var i = 0; i < Columns; i++) {
-        for (var j = 0; j < Rows; j++) {
+      for (var x = 0; x < Columns; x++) {
+        for (var y = 0; y < Rows; y++) {
 
-          var cellX = cellSize.Width * i + EmptyBordersSize;
-          var cellY = cellSize.Height * j + EmptyBordersSize;
+          var cellX = cellSize.Width * x + EmptyBordersSize;
+          var cellY = cellSize.Height * y + EmptyBordersSize;
 
           //g.DrawRectangle(borderPen, cellX, cellY, cellSize.Width, cellSize.Height);
 
           g.FillEllipse(pointBrush, cellX - CellBorderWidth, cellY - CellBorderWidth, PointWidth, PointWidth);
-          if (i == Columns - 1)
+          if (x == Columns - 1)
             g.FillEllipse(pointBrush, cellSize.Width + cellX - CellBorderWidth, cellY - CellBorderWidth, PointWidth, PointWidth);
-          if (j == Rows - 1)
+          if (y == Rows - 1)
             g.FillEllipse(pointBrush, cellX - CellBorderWidth, cellSize.Height + cellY - CellBorderWidth, PointWidth, PointWidth);
 
-          var cellValue = (CellState)boardData[i, j];
-          DrawCell(g, i, j, cellSize, cellValue, false);
-          if (MouseColumn == i && MouseRow == j && !cellValue.HasFlag(MouseCellState)) {
-            DrawCell(g, i, j, cellSize, cellValue, true);
+          var cellValue = boardData[x, y];
+          DrawCell(g, x, y, cellSize, cellValue, false);
+          if (MouseColumn == x && MouseRow == y && !cellValue.HasFlag(MouseCellState)) {
+            DrawCell(g, x, y, cellSize, cellValue, true);
           }
         }
       }
@@ -184,6 +172,13 @@ namespace dots.and.boxes {
         cellSize.Height * Rows + EmptyBordersSize - CellBorderWidth, PointWidth, PointWidth);
     }
 
+    private Pen GetCellBorderPen(int x, int y, CellState border) {
+      if (lastMove != null && lastMove.X == x && lastMove.Y == y && lastMove.Border == border)
+        return lastMoveBorderPen;
+
+      return boardData[x, y].HasFlag(border) ? filledBorderPen : clearBorderPen;
+    }
+    
     private void DrawCell(Graphics g, int x, int y, Size cellSize, CellState state, bool preview) {
 
       var cellX = cellSize.Width * x + EmptyBordersSize;
@@ -208,18 +203,18 @@ namespace dots.and.boxes {
             cellX + cellSize.Width, cellY + cellSize.Height - CellBorderWidth * 2);
       }
       else {
-        g.DrawLine(state.HasFlag(CellState.Top) ? filledBorderPen : clearBorderPen,
+        g.DrawLine(GetCellBorderPen(x, y, CellState.Top),
           cellX + CellBorderWidth * 2, cellY,
           cellX + cellSize.Width - CellBorderWidth * 2, cellY);
-        g.DrawLine(state.HasFlag(CellState.Left) ? filledBorderPen : clearBorderPen,
+        g.DrawLine(GetCellBorderPen(x, y, CellState.Left),
           cellX, cellY + CellBorderWidth * 2,
           cellX, cellY + cellSize.Height - CellBorderWidth * 2);
         if (y == Rows - 1)
-          g.DrawLine(state.HasFlag(CellState.Bottom) ? filledBorderPen : clearBorderPen,
+          g.DrawLine(GetCellBorderPen(x, y, CellState.Bottom),
             cellX + CellBorderWidth * 2, cellY + cellSize.Height,
             cellX + cellSize.Width - CellBorderWidth * 2, cellY + cellSize.Height);
         if (x == Columns - 1)
-          g.DrawLine(state.HasFlag(CellState.Right) ? filledBorderPen : clearBorderPen,
+          g.DrawLine(GetCellBorderPen(x, y, CellState.Right),
             cellX + cellSize.Width, cellY + CellBorderWidth * 2,
             cellX + cellSize.Width, cellY + cellSize.Height - CellBorderWidth * 2);
 
@@ -235,7 +230,19 @@ namespace dots.and.boxes {
     #region UI events
 
     private void btnRestart_Click(object sender, EventArgs e) {
-      StartNewGame();
+
+      boardData = new CellState[Columns, Rows];
+      for (var i = 0; i < Columns; i++)
+      for (var j = 0; j < Rows; j++)
+        boardData[i, j] = CellState.Empty;
+
+      Player1Move = true;
+      Player1Score = 0;
+      Player2Score = 0;
+
+      lastMove = null;
+      
+      RedrawBoard();
     }
 
     private void GameBoardOnMouseMove(object sender, MouseEventArgs e) {
@@ -260,13 +267,13 @@ namespace dots.and.boxes {
       var cellY = boardY - MouseRow * cellHeight;
 
       var state = CellState.Empty;
-      if (cellX <= CellBorderWidth)
+      if (cellX <= CellBorderWidth * 2)
         state = CellState.Left;
-      else if (cellX >= cellWidth - CellBorderWidth)
+      else if (cellX >= cellWidth - CellBorderWidth * 2)
         state = CellState.Right;
-      else if (cellY <= CellBorderWidth)
+      else if (cellY <= CellBorderWidth * 2)
         state = CellState.Top;
-      else if (cellY >= cellHeight - CellBorderWidth)
+      else if (cellY >= cellHeight - CellBorderWidth * 2)
         state = CellState.Bottom;
 
       MouseCellState = state;
@@ -275,31 +282,67 @@ namespace dots.and.boxes {
     private void GameBoardOnMouseClick(object sender, MouseEventArgs e) {
       
       if (e.Button != MouseButtons.Left) return;
+      if (!Player1Move) return;
+      
       if (MouseColumn == -1 || MouseRow == -1 || MouseCellState == CellState.Empty)
         return;
 
-      var cellValue = (CellState) boardData[MouseColumn, MouseRow];
+      var cellValue = boardData[MouseColumn, MouseRow];
       if (cellValue.HasFlag(CellState.All))
         return;
 
       if (!cellValue.HasFlag(MouseCellState)) {
-        if (!SetCellBorderState(MouseColumn, MouseRow, MouseCellState)) {
+        if (!SetBorder(MouseColumn, MouseRow, MouseCellState)) {
           Player1Move = !Player1Move;
+          if (!Player1Move) {
+            //process computer move after delay
+            moveTimer.Start();
+          }
         }
       }
 
       RedrawBoard();
+      
+      if (Player1Move) {
+        GameIsOver();
+      }
     }
 
+    #endregion
+
+    #region logic
+
+    private bool SetBorder(int x, int y, CellState border) {
+
+      if (border == CellState.Empty || border >= CellState.All)
+        throw new ArgumentOutOfRangeException(nameof(border));
+      
+      //fix for paint optimization
+      if (border == CellState.Right && x != Columns - 1) {
+        x += 1;
+        border = CellState.Left;
+      }
+      if (border == CellState.Bottom && y != Rows - 1) {
+        y += 1;
+        border = CellState.Top;
+      }
+
+      lastMove = new MoveInfo {X = x, Y = y, Border = border};
+      PlaySetBorderSound();
+      return SetCellBorderState(lastMove.X, lastMove.Y, lastMove.Border);
+    }
+    
     private bool SetCellBorderState(int x, int y, CellState state) {
 
       if (x < 0 || y < 0 || x >= Columns || y >= Rows) return false;
+      
+      if (state == CellState.Empty || state >= CellState.All)
+        throw new ArgumentOutOfRangeException(nameof(state));
 
-      var value = (CellState) boardData[x, y];
+      var value = boardData[x, y];
       if (value.HasFlag(state)) return false;
 
       value |= state;
-      PlaySetBorderSound();
       var result = false;
       if (value.HasFlag(CellState.All)) {
         result = true;
@@ -310,7 +353,7 @@ namespace dots.and.boxes {
         else
           Player2Score++;
       }
-      boardData[x, y] = (byte)(value);
+      boardData[x, y] = value;
       //set nearest cells borders
       if (state == CellState.Top)
         result = SetCellBorderState(x, y - 1, CellState.Bottom) || result;
@@ -324,8 +367,107 @@ namespace dots.and.boxes {
       return result;
     }
 
-    #endregion
+    private void MoveTimerOnTick(object sender, EventArgs e) {
+      moveTimer.Stop();
 
+      if (GameIsOver()) return;
+      
+      var moves = FilterMoves(1);
+      if (moves.Count == 0) {
+          moves = FilterMoves(4);
+          if (Debugger.IsAttached && moves.Count != 0) {
+            DoComputerMove(moves, true);
+            return;
+          }
+      }
+      
+      if (moves.Count == 0) moves = FilterMoves(3);
+      if (moves.Count == 0) moves = FilterMoves(2);
+
+      if (moves.Count != 0)
+        DoComputerMove(moves, false);
+    }
+
+    private void DoComputerMove(List<MoveInfo> moves, bool autoFill) {
+      
+      var selectedMove = moves[random.Next(moves.Count)];
+      if (SetBorder(selectedMove.X, selectedMove.Y, selectedMove.Border)) {
+        moveTimer.Start();
+      }
+      else {
+        if (autoFill && moves.Count >= 5) {
+          moveTimer.Start();
+        }
+        else
+          Player1Move = true;
+      }
+      RedrawBoard();
+    }
+    
+    private bool GameIsOver() {
+      
+      for(var x = 0; x < Columns; x++)
+      for (var y = 0; y < Rows; y++)
+        if (!boardData[x, y].HasFlag(CellState.All))
+          return false;
+
+      var winner = Player1Score > Player2Score ? "Player 1" : "Player 2";
+      MessageBox.Show($"Congratulations, {winner} win!", "Game over", MessageBoxButtons.OK,
+        MessageBoxIcon.Information);
+      btnRestart_Click(this, EventArgs.Empty);
+      return true;
+    }
+    
+    private static int CountEmptyBorders(CellState state) {
+      if (state.HasFlag(CellState.All))
+        return 0;
+      var result = 4;
+      if (state.HasFlag(CellState.Top))
+        result--;
+      if (state.HasFlag(CellState.Left))
+        result--;
+      if (state.HasFlag(CellState.Bottom))
+        result--;
+      if (state.HasFlag(CellState.Right))
+        result--;
+      return result;
+    }
+
+    private static List<CellState> GetEmptyBorders(CellState state) {
+      var result = new List<CellState>();
+      if (state.HasFlag(CellState.All)) return result;
+      if (!state.HasFlag(CellState.Top))
+        result.Add(CellState.Top);
+      if (!state.HasFlag(CellState.Left))
+        result.Add(CellState.Left);
+      if (!state.HasFlag(CellState.Bottom))
+        result.Add(CellState.Bottom);
+      if (!state.HasFlag(CellState.Right))
+        result.Add(CellState.Right);
+      return result;
+    }
+    
+    private List<MoveInfo> FilterMoves(int emptyBordersNum) {
+      var result = new List<MoveInfo>();
+      for(var x = 0; x < Columns; x++)
+      for (var y = 0; y < Rows; y++) {
+        var borders = GetEmptyBorders(boardData[x, y]);
+        if (borders.Count != emptyBordersNum) continue;
+        foreach (var border in borders) {
+          if (emptyBordersNum > 1) {
+            if (border == CellState.Left && x > 0 && CountEmptyBorders(boardData[x - 1, y]) != emptyBordersNum) continue;
+            if (border == CellState.Top && y > 0 && CountEmptyBorders(boardData[x, y - 1]) != emptyBordersNum) continue;
+            if (border == CellState.Bottom && y < Rows - 1 && CountEmptyBorders(boardData[x, y + 1]) != emptyBordersNum) continue;
+            if (border == CellState.Right && x < Columns - 1 && CountEmptyBorders(boardData[x + 1, y]) != emptyBordersNum) continue;
+          }
+          result.Add(new MoveInfo {X = x, Y = y, Border = border});
+        }
+      }
+      return result;
+    }
+    
+    #endregion
+    
     #region sounds
 
     private Stream GetResource(string name) {
