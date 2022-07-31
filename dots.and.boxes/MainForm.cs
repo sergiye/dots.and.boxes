@@ -102,6 +102,8 @@ namespace dots.and.boxes {
     public MainForm() {
       
       InitializeComponent();
+
+      Text = $"Dots and Boxes. Version: {Assembly.GetExecutingAssembly().GetName().Version.ToString(3)}";
       
       Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
       StartPosition = FormStartPosition.CenterScreen;
