@@ -37,14 +37,10 @@ namespace dots.and.boxes {
       this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.restartToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.changeBoardSizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.x5ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.x10ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.x15ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.x20ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.x2015ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.toolStripSizes = new System.Windows.Forms.ToolStripComboBox();
       this.fillToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
       this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
       this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.visitAppSiteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.howToPlayToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -58,7 +54,7 @@ namespace dots.and.boxes {
       // 
       this.gameBoard.Dock = System.Windows.Forms.DockStyle.Fill;
       this.gameBoard.Location = new System.Drawing.Point(0, 24);
-      this.gameBoard.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+      this.gameBoard.Margin = new System.Windows.Forms.Padding(2);
       this.gameBoard.Name = "gameBoard";
       this.gameBoard.Size = new System.Drawing.Size(584, 587);
       this.gameBoard.TabIndex = 0;
@@ -158,8 +154,8 @@ namespace dots.and.boxes {
             this.restartToolStripMenuItem,
             this.changeBoardSizeToolStripMenuItem,
             this.fillToolStripMenuItem,
-            this.toolStripMenuItem1,
-            this.exitToolStripMenuItem});
+            this.exitToolStripMenuItem,
+            this.toolStripMenuItem1});
       this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
       this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
       this.fileToolStripMenuItem.Text = "File";
@@ -175,51 +171,17 @@ namespace dots.and.boxes {
       // changeBoardSizeToolStripMenuItem
       // 
       this.changeBoardSizeToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.x5ToolStripMenuItem,
-            this.x10ToolStripMenuItem,
-            this.x15ToolStripMenuItem,
-            this.x20ToolStripMenuItem,
-            this.x2015ToolStripMenuItem});
+            this.toolStripSizes});
       this.changeBoardSizeToolStripMenuItem.Name = "changeBoardSizeToolStripMenuItem";
       this.changeBoardSizeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
       this.changeBoardSizeToolStripMenuItem.Text = "Change size";
       // 
-      // x5ToolStripMenuItem
+      // toolStripSizes
       // 
-      this.x5ToolStripMenuItem.Name = "x5ToolStripMenuItem";
-      this.x5ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-      this.x5ToolStripMenuItem.Text = "5x5";
-      this.x5ToolStripMenuItem.Click += new System.EventHandler(this.ChangeBoardSize);
-      // 
-      // x10ToolStripMenuItem
-      // 
-      this.x10ToolStripMenuItem.Checked = true;
-      this.x10ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-      this.x10ToolStripMenuItem.Name = "x10ToolStripMenuItem";
-      this.x10ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-      this.x10ToolStripMenuItem.Text = "10x10";
-      this.x10ToolStripMenuItem.Click += new System.EventHandler(this.ChangeBoardSize);
-      // 
-      // x15ToolStripMenuItem
-      // 
-      this.x15ToolStripMenuItem.Name = "x15ToolStripMenuItem";
-      this.x15ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-      this.x15ToolStripMenuItem.Text = "15x10";
-      this.x15ToolStripMenuItem.Click += new System.EventHandler(this.ChangeBoardSize);
-      // 
-      // x20ToolStripMenuItem
-      // 
-      this.x20ToolStripMenuItem.Name = "x20ToolStripMenuItem";
-      this.x20ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-      this.x20ToolStripMenuItem.Text = "20x10";
-      this.x20ToolStripMenuItem.Click += new System.EventHandler(this.ChangeBoardSize);
-      // 
-      // x2015ToolStripMenuItem
-      // 
-      this.x2015ToolStripMenuItem.Name = "x2015ToolStripMenuItem";
-      this.x2015ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-      this.x2015ToolStripMenuItem.Text = "20x15";
-      this.x2015ToolStripMenuItem.Click += new System.EventHandler(this.ChangeBoardSize);
+      this.toolStripSizes.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+      this.toolStripSizes.Name = "toolStripSizes";
+      this.toolStripSizes.Size = new System.Drawing.Size(121, 23);
+      this.toolStripSizes.SelectedIndexChanged += new System.EventHandler(this.ChangeBoardSize);
       // 
       // fillToolStripMenuItem
       // 
@@ -229,11 +191,6 @@ namespace dots.and.boxes {
       this.fillToolStripMenuItem.Text = "Fill";
       this.fillToolStripMenuItem.Click += new System.EventHandler(this.btnFill_Click);
       // 
-      // toolStripMenuItem1
-      // 
-      this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-      this.toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
-      // 
       // exitToolStripMenuItem
       // 
       this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
@@ -241,6 +198,11 @@ namespace dots.and.boxes {
       this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
       this.exitToolStripMenuItem.Text = "Exit";
       this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
+      // 
+      // toolStripMenuItem1
+      // 
+      this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+      this.toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
       // 
       // helpToolStripMenuItem
       // 
@@ -300,11 +262,6 @@ namespace dots.and.boxes {
     }
 
     private System.Windows.Forms.ToolStripMenuItem changeBoardSizeToolStripMenuItem;
-    private System.Windows.Forms.ToolStripMenuItem x5ToolStripMenuItem;
-    private System.Windows.Forms.ToolStripMenuItem x10ToolStripMenuItem;
-    private System.Windows.Forms.ToolStripMenuItem x15ToolStripMenuItem;
-    private System.Windows.Forms.ToolStripMenuItem x20ToolStripMenuItem;
-    private System.Windows.Forms.ToolStripMenuItem x2015ToolStripMenuItem;
 
 
     private System.Windows.Forms.PictureBox gameBoard;
@@ -327,5 +284,6 @@ namespace dots.and.boxes {
     private System.Windows.Forms.ToolStripMenuItem visitAppSiteToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem howToPlayToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
+    private System.Windows.Forms.ToolStripComboBox toolStripSizes;
   }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -30,6 +31,30 @@ namespace dots.and.boxes {
     #endregion
     
     #region game data
+
+    private struct BoardSize {
+
+      public int Columns { get; }
+      public int Rows { get; }
+      public int Width { get; }
+      public int Height { get; }
+
+      public BoardSize(int columns, int rows, int width, int height) {
+        Columns = columns;
+        Rows = rows;
+        Width = width;
+        Height = height;
+      }
+    }
+
+    private static BoardSize[] boardSizes = new BoardSize[] { 
+      new BoardSize(5, 5, 600, 700),
+      new BoardSize(10, 7, 600, 500),
+      new BoardSize(10, 10, 600, 700),
+      new BoardSize(15, 10, 900, 700),
+      new BoardSize(20, 10, 1200, 700),
+      new BoardSize(20, 15, 1000, 800),
+    };
 
     private readonly Timer moveTimer;
     private readonly Random random = new Random();
@@ -133,7 +158,23 @@ namespace dots.and.boxes {
       gameBoard.SizeChanged += (sender, args) => RedrawBoard(); //redraw on panel resize
       gameBoard.MouseMove += GameBoardOnMouseMove;
       gameBoard.MouseClick += GameBoardOnMouseClick;
+
+      foreach (var size in boardSizes)
+        this.toolStripSizes.Items.Add($"{size.Columns}x{size.Rows}");
+
+      //load settings
+      var key = Registry.CurrentUser.CreateSubKey("SOFTWARE\\sergiye\\" + Application.ProductName);
+      if (key != null) {
+        toolStripSizes.SelectedIndex = (int)key.GetValue("size", 2);
+      }
       
+      this.Closed += (s, e) => {
+        //save settings
+        if (key != null) {
+          key.SetValue("size", toolStripSizes.SelectedIndex);
+        }
+      };
+
       btnRestart_Click(this, EventArgs.Empty);
     }
 
@@ -235,60 +276,11 @@ namespace dots.and.boxes {
     #region UI events
 
     private void ChangeBoardSize(object sender, EventArgs e) {
-      var menuItem = sender as ToolStripMenuItem;
-      if (menuItem == null || menuItem.Checked) return;
-      menuItem.Checked = true;
-      
-      //uncheck
-      switch (Columns) {
-        case 5:
-          x5ToolStripMenuItem.Checked = false;
-          break;
-        case 10:
-          x10ToolStripMenuItem.Checked = false;
-          break;
-        case 15:
-          x15ToolStripMenuItem.Checked = false;
-          break;
-        case 20:
-          if (Rows == 10)
-            x20ToolStripMenuItem.Checked = false;
-          else
-            x2015ToolStripMenuItem.Checked = false;
-          break;
-      }
-      
-      //set size
-      if (menuItem == x5ToolStripMenuItem) {
-        Columns = 5;
-        Rows = 5;
-        Width = 600;
-        Height = 700;
-      }
-      else if (menuItem == x10ToolStripMenuItem) {
-        Columns = 10;
-        Rows = 10;
-        Width = 600;
-        Height = 700;
-      }
-      else if (menuItem == x15ToolStripMenuItem) {
-        Columns = 15;
-        Rows = 10;
-        Width = 900;
-        Height = 700;
-      }
-      else if (menuItem == x20ToolStripMenuItem) {
-        Columns = 20;
-        Rows = 10;
-        Width = 1200;
-        Height = 700;
-      }
-      else if (menuItem == x2015ToolStripMenuItem) {
-        Columns = 20;
-        Rows = 15;
-        Width = 1000;
-        Height = 800;
-      }
+      var size = boardSizes[toolStripSizes.SelectedIndex];
+      Columns = size.Columns;
+      Rows = size.Rows;
+      Width = size.Width;
+      Height = size.Height;
       btnRestart_Click(this, EventArgs.Empty);
     }
     
