@@ -343,17 +343,20 @@ To place a line, move the mouse cursor to the place between two unconnected dots
       var boardY = e.Location.Y - EmptyBordersSize;
       var cellWidth = (gameBoard.Width - EmptyBordersSize * 2) / Columns;
       var cellHeight = (gameBoard.Height - EmptyBordersSize * 2) / Rows;
+      var borderClickWidth = cellWidth / 3;
    
       //skip borders
-      if (boardX < 0 || boardX >= cellWidth * Columns ||
-          boardY < 0 || boardY >= cellHeight * Rows) {
+      if (boardX + borderClickWidth < 0 || boardX >= cellWidth * Columns + borderClickWidth ||
+          boardY + borderClickWidth < 0 || boardY >= cellHeight * Rows + borderClickWidth) {
         MouseColumn = -1;
         MouseRow = -1;
         return;
       }
 
       MouseColumn = boardX / cellWidth;
+      if (MouseColumn == Columns) MouseColumn = Columns - 1;
       MouseRow = boardY / cellHeight;
+      if (MouseRow == Rows) MouseRow = Rows - 1;
 
       var emptyBorders = GetEmptyBorders(boardData[GetIndex(MouseColumn, MouseRow)]);
       if (emptyBorders.Count == 1) {
@@ -365,13 +368,13 @@ To place a line, move the mouse cursor to the place between two unconnected dots
       var cellY = boardY - MouseRow * cellHeight;
 
       var state = CellState.Empty;
-      if (cellX <= CellBorderWidth * 3)
+      if (cellX <= borderClickWidth)
         state = CellState.Left;
-      else if (cellX >= cellWidth - CellBorderWidth * 3)
+      else if (cellX >= cellWidth - borderClickWidth)
         state = CellState.Right;
-      else if (cellY <= CellBorderWidth * 3)
+      else if (cellY <= borderClickWidth)
         state = CellState.Top;
-      else if (cellY >= cellHeight - CellBorderWidth * 3)
+      else if (cellY >= cellHeight - borderClickWidth)
         state = CellState.Bottom;
 
       MouseCellState = state;
