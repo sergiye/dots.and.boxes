@@ -31,10 +31,12 @@ namespace dots.and.boxes {
     
     #region game data
 
-    private const int Columns = 10;
-    private const int Rows = 10;
     private readonly Timer moveTimer;
     private readonly Random random = new Random();
+
+    private static int Columns = 10;
+    private static int Rows = 10;
+
     private MoveInfo lastMove;
     
     private CellState[] boardData;
@@ -55,7 +57,7 @@ namespace dots.and.boxes {
       set {
         if (value == player1Score ) return;
         player1Score = value;
-        lblPlayer1Score.Text = player1Score.ToString();
+        lblPlayer1Score.Text = $"{player1Score} Boxes";
       }
     }
 
@@ -65,7 +67,7 @@ namespace dots.and.boxes {
       set {
         if (value == player2Score ) return;
         player2Score = value;
-        lblPlayer2Score.Text = player2Score.ToString();
+        lblPlayer2Score.Text = $"{player2Score} Boxes";
       }
     }
 
@@ -110,16 +112,13 @@ namespace dots.and.boxes {
       Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
       StartPosition = FormStartPosition.CenterScreen;
 
-      Width = 600;
-      Height = 700;
-
       boardBackColor = Color.White;
       pointBrush = new SolidBrush(Color.Black);
       
       clearBorderPen = new Pen(Color.LightGray, 1);
-      filledBorderPen = new Pen(Color.MediumBlue, CellBorderWidth);
-      lastMoveBorderPen = new Pen(Color.Lime, CellBorderWidth);
-      previewBorderPen = new Pen(Color.Goldenrod, CellBorderWidth);
+      filledBorderPen = new Pen(Color.DarkOliveGreen, CellBorderWidth);
+      lastMoveBorderPen = new Pen(Color.Magenta, CellBorderWidth);
+      previewBorderPen = new Pen(Color.LightGreen, CellBorderWidth);
 
       player1CellBrush = new SolidBrush(lblPlayer1Score.ForeColor);
       player2CellBrush = new SolidBrush(lblPlayer2Score.ForeColor);
@@ -235,12 +234,67 @@ namespace dots.and.boxes {
 
     #region UI events
 
+    private void ChangeBoardSize(object sender, EventArgs e) {
+      var menuItem = sender as ToolStripMenuItem;
+      if (menuItem == null || menuItem.Checked) return;
+      menuItem.Checked = true;
+      
+      //uncheck
+      switch (Columns) {
+        case 5:
+          x5ToolStripMenuItem.Checked = false;
+          break;
+        case 10:
+          x10ToolStripMenuItem.Checked = false;
+          break;
+        case 15:
+          x15ToolStripMenuItem.Checked = false;
+          break;
+        case 20:
+          if (Rows == 10)
+            x20ToolStripMenuItem.Checked = false;
+          else
+            x2015ToolStripMenuItem.Checked = false;
+          break;
+      }
+      
+      //set size
+      if (menuItem == x5ToolStripMenuItem) {
+        Columns = 5;
+        Rows = 5;
+        Width = 600;
+        Height = 700;
+      }
+      else if (menuItem == x10ToolStripMenuItem) {
+        Columns = 10;
+        Rows = 10;
+        Width = 600;
+        Height = 700;
+      }
+      else if (menuItem == x15ToolStripMenuItem) {
+        Columns = 15;
+        Rows = 10;
+        Width = 900;
+        Height = 700;
+      }
+      else if (menuItem == x20ToolStripMenuItem) {
+        Columns = 20;
+        Rows = 10;
+        Width = 1200;
+        Height = 700;
+      }
+      else if (menuItem == x2015ToolStripMenuItem) {
+        Columns = 20;
+        Rows = 15;
+        Width = 1000;
+        Height = 800;
+      }
+      btnRestart_Click(this, EventArgs.Empty);
+    }
+    
     private void btnRestart_Click(object sender, EventArgs e) {
 
       boardData = new CellState[Columns * Rows];
-      for (var i = 0; i < Columns; i++)
-      for (var j = 0; j < Rows; j++)
-        boardData[GetIndex(i, j)] = CellState.Empty;
 
       Player1Move = true;
       Player1Score = 0;
@@ -248,10 +302,39 @@ namespace dots.and.boxes {
 
       lastMove = null;
       
-      if (Debugger.IsAttached)
-        PreFillBoard();
-      
       RedrawBoard();
+    }
+
+    private void btnFill_Click(object sender, EventArgs e) {
+      PreFillBoard();
+    }
+
+    private void exitToolStripMenuItem_Click(object sender, EventArgs e) {
+      Close();
+    }
+
+    private void visitAppSiteToolStripMenuItem_Click(object sender, EventArgs e) {
+      Process.Start("https://github.com/sergiye/dots.and.boxes");
+    }
+
+    private void howToPlayToolStripMenuItem_Click(object sender, EventArgs e) {
+      MessageBox.Show(
+@"You and the computer take turns to place a line between to adjacent dots trying to form a box (by joining 4 dots with lines).
+
+When you make a box, a blue square will appear inside it.When the computer makes a box, a yellow square will appear inside it.
+
+The one who makes a box must take another turn.
+
+The one who makes the most boxes by the time all dots are connected wins.
+
+The game will determine at random whether you or the computer places the first line.
+
+To place a line, move the mouse cursor to the place between two unconnected dots. When a faint line appears, click on the mouse to make the line permanent.",
+        "How to play", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void aboutToolStripMenuItem_Click(object sender, EventArgs e) {
+      MessageBox.Show("App was developed by © Sergiy Egoshyn (egoshin.sergey@gmail.com)", "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void GameBoardOnMouseMove(object sender, MouseEventArgs e) {
@@ -344,7 +427,7 @@ namespace dots.and.boxes {
 
       lastMove = new MoveInfo {X = x, Y = y, Border = border};
       if (sound) PlaySetBorderSound();
-      var points = SetCellBorderState(boardData, lastMove.X, lastMove.Y, lastMove.Border, Player1Move, false);
+      var points = SetCellBorderState(boardData, lastMove.X, lastMove.Y, lastMove.Border, Player1Move);
 
       if (points > 0) {
         if (Player1Move)
@@ -356,7 +439,7 @@ namespace dots.and.boxes {
       return false;
     }
     
-    private static int SetCellBorderState(CellState[] data, int x, int y, CellState state, bool player1Move, bool secondStep) {
+    private static int SetCellBorderState(CellState[] data, int x, int y, CellState state, bool player1Move, bool recursive = false) {
 
       if (x < 0 || y < 0 || x >= Columns || y >= Rows) return 0;
       //if (data[GetIndex(x, y)].HasFlag(state)) return 0;
@@ -368,7 +451,7 @@ namespace dots.and.boxes {
         if (player1Move) data[GetIndex(x, y)] |= CellState.OwnedByPlayer1;
       }
 
-      if (secondStep) return result;
+      if (recursive) return result;
       
       //set nearest cells borders
       if (state == CellState.Top)
@@ -390,6 +473,7 @@ namespace dots.and.boxes {
           return;
         var selectedMove = moves[random.Next(moves.Count)];
         SetBorder(selectedMove.X, selectedMove.Y, selectedMove.Border, false);
+        RedrawBoard();
       }
     }
     
@@ -414,7 +498,7 @@ namespace dots.and.boxes {
           var move = moves[i];
           //computer move
           var data = GetBoardCopy(boardData);
-          SetCellBorderState(data, move.X, move.Y, move.Border, false, false);
+          SetCellBorderState(data, move.X, move.Y, move.Border, false);
           var count = GetNextMovePoints(data, minPoints);
           if (minPoints <= count) continue;
           index = i;
@@ -446,7 +530,7 @@ namespace dots.and.boxes {
       foreach (var move in nextMoves) {
         var nextData = data;
         // var nextData = nextMoves.Count == 1 ? data : GetBoardCopy(data);
-        var res = SetCellBorderState(nextData, move.X, move.Y, move.Border, true, false);
+        var res = SetCellBorderState(nextData, move.X, move.Y, move.Border, true);
         if (res == 0) continue;
         if (res > max) return max; //no need to calculate all
         res += GetNextMovePoints(nextData, max);
@@ -459,8 +543,8 @@ namespace dots.and.boxes {
     private bool GameIsOver() {
       if (boardData.Any(c => !c.HasFlag(CellState.All)))
         return false;
-      MessageBox.Show($"{(Player1Score >= Player2Score ? "Player 1" : "Player 2")} win!", "Game over", MessageBoxButtons.OK,
-        MessageBoxIcon.Information);
+      MessageBox.Show(Player1Score >= Player2Score ? "You are the champion!" : "Another one bites the dust...", 
+        "Game over", MessageBoxButtons.OK, MessageBoxIcon.Information);
       btnRestart_Click(this, EventArgs.Empty);
       return true;
     }
