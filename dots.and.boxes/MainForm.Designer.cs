@@ -40,7 +40,7 @@ namespace dots.and.boxes {
       this.toolStripSizes = new System.Windows.Forms.ToolStripComboBox();
       this.fillToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
+      this.toolStripMenuSeparator = new System.Windows.Forms.ToolStripSeparator();
       this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.visitAppSiteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.howToPlayToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -152,10 +152,10 @@ namespace dots.and.boxes {
       // 
       this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.restartToolStripMenuItem,
-            this.changeBoardSizeToolStripMenuItem,
             this.fillToolStripMenuItem,
-            this.exitToolStripMenuItem,
-            this.toolStripMenuItem1});
+            this.changeBoardSizeToolStripMenuItem,
+            this.toolStripMenuSeparator,
+            this.exitToolStripMenuItem});
       this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
       this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
       this.fileToolStripMenuItem.Text = "File";
@@ -201,8 +201,8 @@ namespace dots.and.boxes {
       // 
       // toolStripMenuItem1
       // 
-      this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-      this.toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
+      this.toolStripMenuSeparator.Name = "toolStripMenuItem1";
+      this.toolStripMenuSeparator.Size = new System.Drawing.Size(177, 6);
       // 
       // helpToolStripMenuItem
       // 
@@ -277,7 +277,7 @@ namespace dots.and.boxes {
     private System.Windows.Forms.MenuStrip menuStrip1;
     private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem restartToolStripMenuItem;
-    private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
+    private System.Windows.Forms.ToolStripSeparator toolStripMenuSeparator;
     private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem fillToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
