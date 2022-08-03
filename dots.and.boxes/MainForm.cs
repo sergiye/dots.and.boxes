@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -163,17 +162,17 @@ namespace dots.and.boxes {
         this.toolStripSizes.Items.Add($"{size.Columns}x{size.Rows}");
 
       //load settings
-      var key = Registry.CurrentUser.CreateSubKey("SOFTWARE\\sergiye\\" + Application.ProductName);
-      if (key != null) {
-        toolStripSizes.SelectedIndex = (int)key.GetValue("size", 2);
-      }
+      //var key = Registry.CurrentUser.CreateSubKey("SOFTWARE\\sergiye\\" + Application.ProductName);
+      //if (key != null) {
+      //  toolStripSizes.SelectedIndex = (int)key.GetValue("size", 2);
+      //}
       
-      this.Closed += (s, e) => {
-        //save settings
-        if (key != null) {
-          key.SetValue("size", toolStripSizes.SelectedIndex);
-        }
-      };
+      //this.Closed += (s, e) => {
+      //  //save settings
+      //  if (key != null) {
+      //    key.SetValue("size", toolStripSizes.SelectedIndex);
+      //  }
+      //};
 
       btnRestart_Click(this, EventArgs.Empty);
     }
